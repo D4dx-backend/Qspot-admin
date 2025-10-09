@@ -18,7 +18,7 @@ const SpeakersPage = () => {
   const fetchSpeakers = async () => {
     try {
       setLoading(true);
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
       const response = await axios.get(`${baseURL}/speakers`);
       setSpeakers(response.data || []);
     } catch (err) {

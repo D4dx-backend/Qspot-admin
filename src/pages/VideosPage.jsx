@@ -46,19 +46,35 @@ const VideosPage = () => {
       const token = localStorage.getItem('adminToken');
       const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('order', formData.order);
-      formDataToSend.append('subject', formData.subject);
-      formDataToSend.append('video', formData.video);
-      
-      await axios.post(`${baseURL}/videos`, formDataToSend, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      if (formData.videoType === 'file') {
+        const formDataToSend = new FormData();
+        formDataToSend.append('title', formData.title);
+        formDataToSend.append('description', formData.description);
+        formDataToSend.append('subject', formData.subject);
+        formDataToSend.append('releaseDate', formData.releaseDate);
+        formDataToSend.append('video', formData.video);
+        
+        await axios.post(`${baseURL}/videos`, formDataToSend, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } else {
+        // For URL type, send as JSON
+        await axios.post(`${baseURL}/videos`, {
+          title: formData.title,
+          description: formData.description,
+          subject: formData.subject,
+          releaseDate: formData.releaseDate,
+          video: formData.videoUrl
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
       
       setShowCreateModal(false);
       fetchVideos();
@@ -78,21 +94,41 @@ const VideosPage = () => {
       const token = localStorage.getItem('adminToken');
       const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('order', formData.order);
-      formDataToSend.append('subject', formData.subject);
-      if (formData.video) {
+      if (formData.videoType === 'file' && formData.video) {
+        const formDataToSend = new FormData();
+        formDataToSend.append('title', formData.title);
+        formDataToSend.append('description', formData.description);
+        formDataToSend.append('subject', formData.subject);
+        formDataToSend.append('releaseDate', formData.releaseDate);
         formDataToSend.append('video', formData.video);
-      }
-      
-      await axios.put(`${baseURL}/videos/${editingVideo._id}`, formDataToSend, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
+        
+        await axios.put(`${baseURL}/videos/${editingVideo._id}`, formDataToSend, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } else {
+        // For URL type or when no new file is uploaded
+        const updateData = {
+          title: formData.title,
+          description: formData.description,
+          subject: formData.subject,
+          releaseDate: formData.releaseDate
+        };
+        
+        // Only include video if it's a URL or if we're updating to a URL
+        if (formData.videoType === 'url' && formData.videoUrl) {
+          updateData.video = formData.videoUrl;
         }
-      });
+        
+        await axios.put(`${baseURL}/videos/${editingVideo._id}`, updateData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
       
       setShowEditModal(false);
       setEditingVideo(null);
@@ -176,18 +212,19 @@ const VideosPage = () => {
                       All Videos ({videos.length})
                     </h2>
                     <div className="text-sm text-gray-500">
-                      Sorted by order and creation date
+                      Sorted by creation date
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {videos.map((video) => (
-                      <div key={video._id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                      <div key={video._id} className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-200" onClick={() => window.open(video.video, '_blank')}>
                         <div className="aspect-w-16 aspect-h-9">
                           <video
                             className="w-full h-48 object-cover"
                             controls
                             preload="metadata"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <source src={video.video} type="video/mp4" />
                             Your browser does not support the video tag.
@@ -198,8 +235,8 @@ const VideosPage = () => {
                             <h3 className="text-lg font-semibold text-gray-900 truncate">
                               {video.title}
                             </h3>
-                            <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
-                              Order: {video.order}
+                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                              Click to open
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 mb-3 line-clamp-2">
@@ -213,15 +250,26 @@ const VideosPage = () => {
                               {video.createdAt ? new Date(video.createdAt).toLocaleDateString() : 'Unknown date'}
                             </span>
                           </div>
+                          {video.releaseDate && (
+                            <div className="text-sm text-gray-500 mb-3">
+                              <span className="font-medium">Release Date:</span> {video.releaseDate}
+                            </div>
+                          )}
                           <div className="flex justify-end space-x-2">
                             <button
-                              onClick={() => handleEditVideo(video)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditVideo(video);
+                              }}
                               className="text-indigo-600 hover:text-indigo-900 text-sm font-medium px-3 py-1 rounded-md hover:bg-indigo-50"
                             >
                               Edit
                             </button>
                             <button
-                              onClick={() => setDeleteConfirm(video)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirm(video);
+                              }}
                               className="text-red-600 hover:text-red-900 text-sm font-medium px-3 py-1 rounded-md hover:bg-red-50"
                             >
                               Delete
@@ -277,9 +325,11 @@ const CreateVideoModal = ({ subjects, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    order: 0,
     subject: '',
-    video: null
+    video: null,
+    videoUrl: '',
+    videoType: 'file', // 'file' or 'url'
+    releaseDate: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -298,6 +348,15 @@ const CreateVideoModal = ({ subjects, onClose, onSave }) => {
     if (file) {
       setFormData({ ...formData, video: file });
     }
+  };
+
+  const handleVideoTypeChange = (type) => {
+    setFormData({ 
+      ...formData, 
+      videoType: type,
+      video: type === 'file' ? formData.video : null,
+      videoUrl: type === 'url' ? formData.videoUrl : ''
+    });
   };
 
   return (
@@ -326,16 +385,6 @@ const CreateVideoModal = ({ subjects, onClose, onSave }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Order</label>
-              <input
-                type="number"
-                value={formData.order}
-                onChange={(e) => setFormData({...formData, order: parseInt(e.target.value) || 0})}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                min="0"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700">Subject *</label>
               <select
                 value={formData.subject}
@@ -352,15 +401,68 @@ const CreateVideoModal = ({ subjects, onClose, onSave }) => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Video File *</label>
+              <label className="block text-sm font-medium text-gray-700">Release Date</label>
               <input
-                type="file"
-                accept="video/*"
-                onChange={handleVideoChange}
+                type="text"
+                value={formData.releaseDate}
+                onChange={(e) => setFormData({...formData, releaseDate: e.target.value})}
+                placeholder="e.g., 2024-01-15, January 15, 2024, Q1 2024"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                required
               />
+              <p className="text-xs text-gray-500 mt-1">Enter release date in any format you prefer</p>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Video Type *</label>
+              <div className="mt-1 flex space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="videoType"
+                    value="file"
+                    checked={formData.videoType === 'file'}
+                    onChange={(e) => handleVideoTypeChange(e.target.value)}
+                    className="mr-2"
+                  />
+                  File Upload
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="videoType"
+                    value="url"
+                    checked={formData.videoType === 'url'}
+                    onChange={(e) => handleVideoTypeChange(e.target.value)}
+                    className="mr-2"
+                  />
+                  Video URL
+                </label>
+              </div>
+            </div>
+            {formData.videoType === 'file' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Video File *</label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Video URL *</label>
+                <input
+                  type="url"
+                  value={formData.videoUrl}
+                  onChange={(e) => setFormData({...formData, videoUrl: e.target.value})}
+                  placeholder="https://example.com/video.mp4"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter a direct link to a video file (MP4, WebM, etc.)</p>
+              </div>
+            )}
             <div className="flex justify-end space-x-3 pt-4">
               <button
                 type="button"
@@ -389,9 +491,11 @@ const EditVideoModal = ({ video, subjects, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     title: video.title || '',
     description: video.description || '',
-    order: video.order || 0,
     subject: video.subject?._id || '',
-    video: null
+    video: null,
+    videoUrl: video.video || '',
+    videoType: video.video?.startsWith('http') ? 'url' : 'file',
+    releaseDate: video.releaseDate || ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -410,6 +514,15 @@ const EditVideoModal = ({ video, subjects, onClose, onSave }) => {
     if (file) {
       setFormData({ ...formData, video: file });
     }
+  };
+
+  const handleVideoTypeChange = (type) => {
+    setFormData({ 
+      ...formData, 
+      videoType: type,
+      video: type === 'file' ? formData.video : null,
+      videoUrl: type === 'url' ? formData.videoUrl : ''
+    });
   };
 
   return (
@@ -438,16 +551,6 @@ const EditVideoModal = ({ video, subjects, onClose, onSave }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Order</label>
-              <input
-                type="number"
-                value={formData.order}
-                onChange={(e) => setFormData({...formData, order: parseInt(e.target.value) || 0})}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                min="0"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700">Subject *</label>
               <select
                 value={formData.subject}
@@ -464,6 +567,17 @@ const EditVideoModal = ({ video, subjects, onClose, onSave }) => {
               </select>
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700">Release Date</label>
+              <input
+                type="text"
+                value={formData.releaseDate}
+                onChange={(e) => setFormData({...formData, releaseDate: e.target.value})}
+                placeholder="e.g., 2024-01-15, January 15, 2024, Q1 2024"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter release date in any format you prefer</p>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-gray-700">Current Video</label>
               <video
                 src={video.video}
@@ -472,15 +586,56 @@ const EditVideoModal = ({ video, subjects, onClose, onSave }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">New Video (optional)</label>
-              <input
-                type="file"
-                accept="video/*"
-                onChange={handleVideoChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">Leave empty to keep current video</p>
+              <label className="block text-sm font-medium text-gray-700">Video Type</label>
+              <div className="mt-1 flex space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="videoType"
+                    value="file"
+                    checked={formData.videoType === 'file'}
+                    onChange={(e) => handleVideoTypeChange(e.target.value)}
+                    className="mr-2"
+                  />
+                  File Upload
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="videoType"
+                    value="url"
+                    checked={formData.videoType === 'url'}
+                    onChange={(e) => handleVideoTypeChange(e.target.value)}
+                    className="mr-2"
+                  />
+                  Video URL
+                </label>
+              </div>
             </div>
+            {formData.videoType === 'file' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">New Video File (optional)</label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoChange}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Leave empty to keep current video</p>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">New Video URL (optional)</label>
+                <input
+                  type="url"
+                  value={formData.videoUrl}
+                  onChange={(e) => setFormData({...formData, videoUrl: e.target.value})}
+                  placeholder="https://example.com/video.mp4"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter a direct link to a video file or leave empty to keep current video</p>
+              </div>
+            )}
             <div className="flex justify-end space-x-3 pt-4">
               <button
                 type="button"
