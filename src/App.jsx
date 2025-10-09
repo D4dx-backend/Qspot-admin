@@ -8,6 +8,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import QuestionsPage from './pages/QuestionsPage';
 import VideosPage from './pages/VideosPage';
 import SubjectsPage from './pages/SubjectsPage';
+import SchedulesPage from './pages/SchedulesPage';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/admin/questions" element={<QuestionsPage />} />
           <Route path="/admin/videos" element={<VideosPage />} />
           <Route path="/admin/subjects" element={<SubjectsPage />} />
+          <Route path="/admin/schedules" element={<SchedulesPage />} />
         </Routes>
       </div>
     </Router>
