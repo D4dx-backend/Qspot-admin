@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import Sidebar from '../components/Sidebar';
 
 const NotificationsPage = () => {
@@ -18,7 +19,7 @@ const NotificationsPage = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
       const response = await axios.get(`${baseURL}/notifications`);
       setNotifications(response.data || []);
     } catch (err) {
@@ -32,7 +33,7 @@ const NotificationsPage = () => {
   const handleCreateNotification = async (formData) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
       
       await axios.post(`${baseURL}/notifications`, formData, {
         headers: {
@@ -57,7 +58,7 @@ const NotificationsPage = () => {
   const handleUpdateNotification = async (formData) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
       
       await axios.put(`${baseURL}/notifications/${editingNotification._id}`, formData, {
         headers: {
@@ -78,7 +79,7 @@ const NotificationsPage = () => {
   const handleDeleteNotification = async (notificationId) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
       
       await axios.delete(`${baseURL}/notifications/${notificationId}`, {
         headers: {
@@ -99,36 +100,34 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-black">
       <Sidebar currentPage="notifications" onNavigate={handleNavigate} />
       
       <div className="flex-1 flex flex-col">
-        <header className="bg-white shadow">
-          <div className="px-6 py-4 flex justify-between items-center">
+        <main className="flex-1 p-6">
+          <div className="mb-6 flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Notifications Management</h1>
-              <p className="text-gray-600">Manage system notifications and announcements</p>
+              <h2 className="text-3xl font-bold text-white mb-2">Notifications Management</h2>
+              {/* <p className="text-gray-400">Manage system notifications and announcements</p> */}
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2 transition-colors"
             >
-              Add Notification
+              <FiPlus size={16} />
+              <span>Add Notification</span>
             </button>
           </div>
-        </header>
-
-        <main className="flex-1 p-6">
           {loading ? (
             <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400"></div>
             </div>
           ) : error ? (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+            <div className="bg-red-900/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-md">
               {error}
               <button 
                 onClick={fetchNotifications}
-                className="ml-4 text-red-800 underline hover:text-red-900"
+                className="ml-4 text-red-300 underline hover:text-red-200"
               >
                 Retry
               </button>
@@ -137,41 +136,45 @@ const NotificationsPage = () => {
             <div className="space-y-4">
               {notifications.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-gray-400 text-6xl mb-4">🔔</div>
-                  <p className="text-gray-500 text-lg">No notifications found</p>
-                  <p className="text-gray-400">Add your first notification to get started</p>
+                  <p className="text-gray-400">No notifications found</p>
                 </div>
               ) : (
                 notifications.map((notification) => (
-                  <div key={notification._id} className="bg-white rounded-lg shadow-md p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                          {notification.title}
-                        </h3>
-                        <p className="text-gray-600 mb-4">
-                          {notification.description}
-                        </p>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <span>📅</span>
-                          <span className="ml-2">
-                            {notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : 'Unknown date'}
-                          </span>
+                  <div key={notification._id} className="bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-700 hover:border-gray-600 transition-colors">
+                    <div className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-white mb-2">
+                            {notification.title}
+                          </h3>
+                          <p className="text-gray-300 mb-4">
+                            {notification.description}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center text-sm text-gray-400">
+                              <span>📅</span>
+                              <span className="ml-2">
+                                {notification.createdAt ? new Date(notification.createdAt).toLocaleDateString() : 'Unknown date'}
+                              </span>
+                            </div>
+                            <div className="flex space-x-1">
+                              <button
+                                onClick={() => handleEditNotification(notification)}
+                                className="text-white hover:text-gray-300 hover:bg-gray-700 p-1 rounded transition-colors"
+                                title="Edit notification"
+                              >
+                                <FiEdit2 size={14} />
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm(notification)}
+                                className="text-white hover:text-gray-300 hover:bg-gray-700 p-1 rounded transition-colors"
+                                title="Delete notification"
+                              >
+                                <FiTrash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2 ml-4">
-                        <button
-                          onClick={() => handleEditNotification(notification)}
-                          className="text-indigo-600 hover:text-indigo-900 text-sm font-medium px-3 py-1 rounded-md hover:bg-indigo-50"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(notification)}
-                          className="text-red-600 hover:text-red-900 text-sm font-medium px-3 py-1 rounded-md hover:bg-red-50"
-                        >
-                          Delete
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -233,28 +236,28 @@ const CreateNotificationModal = ({ onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div className="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border border-gray-700 w-96 shadow-2xl rounded-md bg-gray-900">
         <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Notification</h3>
+          <h3 className="text-lg font-medium text-white mb-4">Add New Notification</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Title *</label>
+              <label className="block text-sm font-medium text-gray-300">Title *</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Enter notification title"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Description *</label>
+              <label className="block text-sm font-medium text-gray-300">Description *</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 rows="4"
                 placeholder="Enter notification description"
                 required
@@ -264,14 +267,14 @@ const CreateNotificationModal = ({ onClose, onSave }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Creating...' : 'Create Notification'}
               </button>
@@ -302,27 +305,27 @@ const EditNotificationModal = ({ notification, onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div className="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border border-gray-700 w-96 shadow-2xl rounded-md bg-gray-900">
         <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Notification</h3>
+          <h3 className="text-lg font-medium text-white mb-4">Edit Notification</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Title *</label>
+              <label className="block text-sm font-medium text-gray-300">Title *</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Description *</label>
+              <label className="block text-sm font-medium text-gray-300">Description *</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 rows="4"
                 required
               />
@@ -331,14 +334,14 @@ const EditNotificationModal = ({ notification, onClose, onSave }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Updating...' : 'Update Notification'}
               </button>
@@ -353,27 +356,27 @@ const EditNotificationModal = ({ notification, onClose, onSave }) => {
 // Delete Confirmation Modal Component
 const DeleteConfirmModal = ({ notification, onClose, onConfirm }) => {
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div className="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border border-gray-700 w-96 shadow-2xl rounded-md bg-gray-900">
         <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Notification</h3>
-          <div className="mb-4 p-4 bg-gray-50 rounded-md">
-            <h4 className="font-medium text-gray-900">{notification.title}</h4>
-            <p className="text-sm text-gray-600 mt-1">{notification.description}</p>
+          <h3 className="text-lg font-medium text-white mb-4">Delete Notification</h3>
+          <div className="mb-4 p-4 bg-gray-800 rounded-md">
+            <h4 className="font-medium text-white">{notification.title}</h4>
+            <p className="text-sm text-gray-300 mt-1">{notification.description}</p>
           </div>
-          <p className="text-sm text-gray-500 mb-6">
+          <p className="text-sm text-gray-400 mb-6">
             Are you sure you want to delete this notification? This action cannot be undone.
           </p>
           <div className="flex justify-end space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+              className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={onConfirm}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
             >
               Delete
             </button>

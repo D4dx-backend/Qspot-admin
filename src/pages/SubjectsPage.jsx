@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import Sidebar from '../components/Sidebar';
 
 const SubjectsPage = () => {
@@ -18,7 +19,7 @@ const SubjectsPage = () => {
   const fetchSubjects = async () => {
     try {
       setLoading(true);
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
       const response = await axios.get(`${baseURL}/subjects`);
       setSubjects(response.data || []);
     } catch (err) {
@@ -32,7 +33,7 @@ const SubjectsPage = () => {
   const handleCreateSubject = async (formData) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
       
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
@@ -62,7 +63,7 @@ const SubjectsPage = () => {
   const handleUpdateSubject = async (formData) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
       
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
@@ -90,7 +91,7 @@ const SubjectsPage = () => {
   const handleDeleteSubject = async (subjectId) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const baseURL = import.meta.env.VITE_API_BASE_URL;
       
       await axios.delete(`${baseURL}/subjects/${subjectId}`, {
         headers: {
@@ -111,105 +112,87 @@ const SubjectsPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-black">
       <Sidebar currentPage="subjects" onNavigate={handleNavigate} />
       
       <div className="flex-1 flex flex-col">
-        <header className="bg-white shadow">
-          <div className="px-6 py-4 flex justify-between items-center">
+        <main className="flex-1 p-6">
+          <div className="mb-6 flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Subjects Management</h1>
-              <p className="text-gray-600">Manage educational subjects and categories</p>
+              <h2 className="text-3xl font-bold text-white mb-2">Subjects Management</h2>
+              {/* <p className="text-gray-400">Manage educational subjects and categories</p> */}
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2 transition-colors"
             >
-              Add Subject
+              <FiPlus size={16} />
+              <span>Add Subject</span>
             </button>
           </div>
-        </header>
-
-        <main className="flex-1 p-6">
           {loading ? (
             <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400"></div>
             </div>
           ) : error ? (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+            <div className="bg-red-900/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-md">
               {error}
               <button 
                 onClick={fetchSubjects}
-                className="ml-4 text-red-800 underline hover:text-red-900"
+                className="ml-4 text-red-300 underline hover:text-red-200"
               >
                 Retry
               </button>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {subjects.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 text-6xl mb-4">📚</div>
-                  <p className="text-gray-500 text-lg">No subjects found</p>
-                  <p className="text-gray-400">Add your first subject to get started</p>
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-400">No subjects found</p>
                 </div>
               ) : (
-                <>
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-lg font-medium text-gray-900">
-                      All Subjects ({subjects.length})
-                    </h2>
-                    <div className="text-sm text-gray-500">
-                      Sorted by order and creation date
+                subjects.map((subject) => (
+                  <div key={subject._id} className="bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-700 hover:border-gray-600 transition-colors">
+                    <div className="w-full h-65 bg-gray-800 flex items-center justify-center overflow-hidden">
+                      <img
+                        src={subject.image}
+                        alt={subject.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiA2VjE4TTYgMTJIMTgiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+';
+                        }}
+                      />
                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {subjects.map((subject) => (
-                      <div key={subject._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                        <div className="aspect-w-16 aspect-h-9">
-                          <img
-                            src={subject.image}
-                            alt={subject.name}
-                            className="w-full h-48 object-cover"
-                            onError={(e) => {
-                              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiA2VjE4TTYgMTJIMTgiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+';
-                            }}
-                          />
-                        </div>
-                        <div className="p-4">
-                          <div className="flex items-start justify-between mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900 truncate">
-                              {subject.name}
-                            </h3>
-                            <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
-                              Order: {subject.order}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                            <span>
-                              {subject.createdAt ? new Date(subject.createdAt).toLocaleDateString() : 'Unknown date'}
-                            </span>
-                          </div>
-                          <div className="flex justify-end space-x-2">
+                    <div className="p-4">
+                      <div className="mb-3">
+                        <h3 className="text-lg font-semibold text-white truncate mb-2">
+                          {subject.name}
+                        </h3>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs bg-indigo-900/30 text-indigo-400 px-2 py-1 rounded-full border border-indigo-500/30">
+                            Order: {subject.order}
+                          </span>
+                          <div className="flex space-x-1">
                             <button
                               onClick={() => handleEditSubject(subject)}
-                              className="text-indigo-600 hover:text-indigo-900 text-sm font-medium px-3 py-1 rounded-md hover:bg-indigo-50"
+                              className="text-white hover:text-gray-300 hover:bg-gray-700 p-1 rounded transition-colors"
+                              title="Edit subject"
                             >
-                              Edit
+                              <FiEdit2 size={14} />
                             </button>
                             <button
                               onClick={() => setDeleteConfirm(subject)}
-                              className="text-red-600 hover:text-red-900 text-sm font-medium px-3 py-1 rounded-md hover:bg-red-50"
+                              className="text-white hover:text-gray-300 hover:bg-gray-700 p-1 rounded transition-colors"
+                              title="Delete subject"
                             >
-                              Delete
+                              <FiTrash2 size={14} />
                             </button>
                           </div>
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </>
+                ))
               )}
             </div>
           )}
@@ -275,39 +258,39 @@ const CreateSubjectModal = ({ onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div className="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border border-gray-700 w-96 shadow-2xl rounded-md bg-gray-900">
         <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Subject</h3>
+          <h3 className="text-lg font-medium text-white mb-4">Add New Subject</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Name *</label>
+              <label className="block text-sm font-medium text-gray-300">Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Order *</label>
+              <label className="block text-sm font-medium text-gray-300">Order *</label>
               <input
                 type="number"
                 value={formData.order}
                 onChange={(e) => setFormData({...formData, order: parseInt(e.target.value) || 0})}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 min="0"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Image *</label>
+              <label className="block text-sm font-medium text-gray-300">Image *</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-600 file:text-white hover:file:bg-indigo-700"
                 required
               />
             </div>
@@ -315,14 +298,14 @@ const CreateSubjectModal = ({ onClose, onSave }) => {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Creating...' : 'Create Subject'}
               </button>
@@ -361,66 +344,66 @@ const EditSubjectModal = ({ subject, onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div className="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border border-gray-700 w-96 shadow-2xl rounded-md bg-gray-900">
         <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Subject</h3>
+          <h3 className="text-lg font-medium text-white mb-4">Edit Subject</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Name *</label>
+              <label className="block text-sm font-medium text-gray-300">Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Order *</label>
+              <label className="block text-sm font-medium text-gray-300">Order *</label>
               <input
                 type="number"
                 value={formData.order}
                 onChange={(e) => setFormData({...formData, order: parseInt(e.target.value) || 0})}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 min="0"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Current Image</label>
+              <label className="block text-sm font-medium text-gray-300">Current Image</label>
               <img
                 src={subject.image}
                 alt={subject.name}
-                className="mt-2 w-full h-32 object-cover rounded-md border"
+                className="mt-2 w-full h-32 object-cover rounded-md border border-gray-600"
                 onError={(e) => {
-                  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiA2VjE4TTYgMTJIMTgiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+';
+                  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiA2VjE4TTYgMTJIMTgiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+';
                 }}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">New Image (required)</label>
+              <label className="block text-sm font-medium text-gray-300">New Image (required)</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-600 file:text-white hover:file:bg-indigo-700"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">A new image is required for updates</p>
+              <p className="text-xs text-gray-400 mt-1">A new image is required for updates</p>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Updating...' : 'Update Subject'}
               </button>
@@ -435,35 +418,35 @@ const EditSubjectModal = ({ subject, onClose, onSave }) => {
 // Delete Confirmation Modal Component
 const DeleteConfirmModal = ({ subject, onClose, onConfirm }) => {
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div className="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border border-gray-700 w-96 shadow-2xl rounded-md bg-gray-900">
         <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Subject</h3>
+          <h3 className="text-lg font-medium text-white mb-4">Delete Subject</h3>
           <div className="mb-4">
             <img
               src={subject.image}
               alt={subject.name}
-              className="w-full h-32 object-cover rounded-md border"
+              className="w-full h-32 object-cover rounded-md border border-gray-600"
               onError={(e) => {
-                e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiA2VjE4TTYgMTJIMTgiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+';
+                e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiA2VjE4TTYgMTJIMTgiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+';
               }}
             />
-            <h4 className="font-medium text-gray-900 mt-2">{subject.name}</h4>
-            <p className="text-sm text-gray-600">Order: {subject.order}</p>
+            <h4 className="font-medium text-white mt-2">{subject.name}</h4>
+            <p className="text-sm text-gray-400">Order: {subject.order}</p>
           </div>
-          <p className="text-sm text-gray-500 mb-6">
+          <p className="text-sm text-gray-400 mb-6">
             Are you sure you want to delete this subject? This action cannot be undone and will also delete the subject image.
           </p>
           <div className="flex justify-end space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+              className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={onConfirm}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
             >
               Delete
             </button>

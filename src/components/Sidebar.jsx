@@ -71,9 +71,12 @@ const Sidebar = ({ currentPage, onNavigate }) => {
   return (
     <div className="bg-gray-800 text-white w-64 min-h-screen flex flex-col">
       {/* Logo/Header */}
-      <div className="p-6 border-b border-gray-700">
-        <h1 className="text-xl font-bold text-white">QSpot Admin</h1>
-        <p className="text-gray-400 text-sm">Management Panel</p>
+      <div className="p-6 border-b border-gray-700 flex justify-center">
+        <img 
+          src="/src/assets/Logo 01.png" 
+          alt="QSpot Logo" 
+          className="h-12 w-auto"
+        />
       </div>
 
       {/* Navigation Menu */}
