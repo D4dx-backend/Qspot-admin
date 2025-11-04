@@ -21,7 +21,18 @@ const SpeakersPage = () => {
       setLoading(true);
       const baseURL = import.meta.env.VITE_API_BASE_URL;
       const response = await axios.get(`${baseURL}/speakers`);
-      setSpeakers(response.data || []);
+      const data = Array.isArray(response.data) ? [...response.data] : [];
+      data.sort((a, b) => {
+        const aNum = Number(a?.order);
+        const bNum = Number(b?.order);
+        const aHas = !Number.isNaN(aNum);
+        const bHas = !Number.isNaN(bNum);
+        if (aHas && bHas) return aNum - bNum; // ascending by order
+        if (aHas) return -1; // items with order come first
+        if (bHas) return 1;
+        return 0;
+      });
+      setSpeakers(data);
     } catch (err) {
       console.error('Error fetching speakers:', err);
       setError('Failed to fetch speakers');
@@ -38,6 +49,9 @@ const SpeakersPage = () => {
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('designation', formData.designation);
+      if (formData.order !== undefined && formData.order !== '') {
+        formDataToSend.append('order', String(formData.order));
+      }
       formDataToSend.append('image', formData.image);
       
       await axios.post(`${baseURL}/speakers`, formDataToSend, {
@@ -68,6 +82,9 @@ const SpeakersPage = () => {
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('designation', formData.designation);
+      if (formData.order !== undefined && formData.order !== '') {
+        formDataToSend.append('order', String(formData.order));
+      }
       if (formData.image) {
         formDataToSend.append('image', formData.image);
       }
@@ -169,9 +186,16 @@ const SpeakersPage = () => {
                         <h3 className="text-lg font-semibold text-white truncate">
                           {speaker.name}
                         </h3>
-                        <span className="text-xs bg-indigo-900/30 text-indigo-400 px-2 py-1 rounded-full border border-indigo-500/30">
-                          Speaker
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          {speaker.order !== undefined && speaker.order !== '' && (
+                            <span className="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded-full border border-gray-600" title="Order">
+                              #{String(speaker.order)}
+                            </span>
+                          )}
+                          <span className="text-xs bg-indigo-900/30 text-indigo-400 px-2 py-1 rounded-full border border-indigo-500/30">
+                            Speaker
+                          </span>
+                        </div>
                       </div>
                       <div className="flex items-center justify-between text-sm text-gray-400 mb-3">
                         <span className="truncate">
@@ -240,6 +264,7 @@ const CreateSpeakerModal = ({ onClose, onSave }) => {
   const [formData, setFormData] = useState({
     name: '',
     designation: '',
+    order: '',
     image: null
   });
   const [loading, setLoading] = useState(false);
@@ -287,6 +312,18 @@ const CreateSpeakerModal = ({ onClose, onSave }) => {
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-300">Order (number)</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={formData.order}
+                onChange={(e) => setFormData({ ...formData, order: e.target.value })}
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="e.g., 1"
+                min="0"
+              />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-gray-300">Image *</label>
               <input
                 type="file"
@@ -324,6 +361,7 @@ const EditSpeakerModal = ({ speaker, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     name: speaker.name || '',
     designation: speaker.designation || '',
+    order: speaker.order ?? '',
     image: null
   });
   const [loading, setLoading] = useState(false);
@@ -368,6 +406,18 @@ const EditSpeakerModal = ({ speaker, onClose, onSave }) => {
                 value={formData.designation}
                 onChange={(e) => setFormData({...formData, designation: e.target.value})}
                 className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300">Order (number)</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={formData.order}
+                onChange={(e) => setFormData({ ...formData, order: e.target.value })}
+                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="e.g., 1"
+                min="0"
               />
             </div>
             <div>
