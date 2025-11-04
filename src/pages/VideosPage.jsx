@@ -3,6 +3,42 @@ import axios from 'axios';
 import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiChevronLeft, FiChevronRight, FiPlay, FiCalendar, FiBookOpen } from 'react-icons/fi';
 import Sidebar from '../components/Sidebar';
 
+// Helper function to extract YouTube video ID and generate thumbnail URL
+const getYouTubeThumbnail = (url) => {
+  if (!url) return null;
+  
+  // YouTube URL patterns
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /youtube\.com\/v\/([^&\n?#]+)/,
+    /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) {
+      const videoId = match[1];
+      return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    }
+  }
+  
+  return null;
+};
+
+// Helper function to check if URL is a YouTube link
+const isYouTubeUrl = (url) => {
+  if (!url) return false;
+  return url.includes('youtube.com') || url.includes('youtu.be');
+};
+
+// Helper function to handle YouTube video click
+const handleYouTubeClick = (url) => {
+  if (isYouTubeUrl(url)) {
+    // Open YouTube video in new tab
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+};
+
 const VideosPage = () => {
   const [videos, setVideos] = useState([]);
   const [filteredVideos, setFilteredVideos] = useState([]);
@@ -215,42 +251,6 @@ const VideosPage = () => {
 
   const handleNavigate = (path) => {
     window.location.href = path;
-  };
-
-  // Helper function to extract YouTube video ID and generate thumbnail URL
-  const getYouTubeThumbnail = (url) => {
-    if (!url) return null;
-    
-    // YouTube URL patterns
-    const patterns = [
-      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-      /youtube\.com\/v\/([^&\n?#]+)/,
-      /youtube\.com\/watch\?.*v=([^&\n?#]+)/
-    ];
-    
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match) {
-        const videoId = match[1];
-        return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-      }
-    }
-    
-    return null;
-  };
-
-  // Helper function to check if URL is a YouTube link
-  const isYouTubeUrl = (url) => {
-    if (!url) return false;
-    return url.includes('youtube.com') || url.includes('youtu.be');
-  };
-
-  // Helper function to handle YouTube video click
-  const handleYouTubeClick = (url) => {
-    if (isYouTubeUrl(url)) {
-      // Open YouTube video in new tab
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
   };
 
   // Pagination logic
@@ -629,6 +629,21 @@ const VideosPage = () => {
   );
 };
 
+// Helper function to format date for date input (YYYY-MM-DD)
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    return '';
+  }
+};
+
 // Create Video Modal Component
 const CreateVideoModal = ({ subjects, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -712,13 +727,11 @@ const CreateVideoModal = ({ subjects, onClose, onSave }) => {
             <div>
               <label className="block text-sm font-medium text-gray-300">Release Date</label>
               <input
-                type="text"
+                type="date"
                 value={formData.releaseDate}
                 onChange={(e) => setFormData({...formData, releaseDate: e.target.value})}
-                placeholder="e.g., 2024-01-15, January 15, 2024, Q1 2024"
                 className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
-              <p className="text-xs text-gray-400 mt-1">Enter release date in any format you prefer</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300">Video Type *</label>
@@ -804,7 +817,7 @@ const EditVideoModal = ({ video, subjects, onClose, onSave }) => {
     video: null,
     videoUrl: video.video || '',
     videoType: video.video?.startsWith('http') ? 'url' : 'file',
-    releaseDate: video.releaseDate || ''
+    releaseDate: formatDateForInput(video.releaseDate) || ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -878,13 +891,11 @@ const EditVideoModal = ({ video, subjects, onClose, onSave }) => {
             <div>
               <label className="block text-sm font-medium text-gray-300">Release Date</label>
               <input
-                type="text"
+                type="date"
                 value={formData.releaseDate}
                 onChange={(e) => setFormData({...formData, releaseDate: e.target.value})}
-                placeholder="e.g., 2024-01-15, January 15, 2024, Q1 2024"
                 className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
-              <p className="text-xs text-gray-400 mt-1">Enter release date in any format you prefer</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300">Current Video</label>
