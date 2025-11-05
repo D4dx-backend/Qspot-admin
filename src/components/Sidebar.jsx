@@ -69,7 +69,7 @@ const Sidebar = ({ currentPage, onNavigate }) => {
   };
 
   return (
-    <div className="bg-gray-800 text-white w-64 min-h-screen flex flex-col">
+    <div className="fixed top-0 left-0 bg-gray-800 text-white w-64 h-screen flex flex-col z-50">
       {/* Logo/Header */}
       <div className="p-6 border-b border-gray-700 flex justify-center">
         <img 
