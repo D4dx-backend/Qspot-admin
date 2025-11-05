@@ -132,7 +132,7 @@ const SpeakersPage = () => {
     <div className="flex min-h-screen bg-black">
       <Sidebar currentPage="speakers" onNavigate={handleNavigate} />
       
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col ml-64">
         <main className="flex-1 p-6">
           <div className="mb-6 flex justify-between items-center">
             <div>
