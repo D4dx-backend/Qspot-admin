@@ -8,7 +8,8 @@ import {
   FaBell, 
   FaImage,
   FaSignOutAlt,
-  FaBook
+  FaBook,
+  FaClipboardList
 } from 'react-icons/fa';
 
 const Sidebar = ({ currentPage, onNavigate }) => {
@@ -36,6 +37,12 @@ const Sidebar = ({ currentPage, onNavigate }) => {
       label: 'Questions',
       icon: FaQuestionCircle,
       path: '/admin/questions'
+    },
+    {
+      id: 'quiz',
+      label: 'Quiz',
+      icon: FaClipboardList,
+      path: '/admin/quiz'
     },
     {
       id: 'schedules',
