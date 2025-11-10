@@ -9,6 +9,7 @@ import QuestionsPage from './pages/QuestionsPage';
 import VideosPage from './pages/VideosPage';
 import SubjectsPage from './pages/SubjectsPage';
 import SchedulesPage from './pages/SchedulesPage';
+import QuizPage from './pages/QuizPage';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/admin/videos" element={<VideosPage />} />
           <Route path="/admin/subjects" element={<SubjectsPage />} />
           <Route path="/admin/schedules" element={<SchedulesPage />} />
+          <Route path="/admin/quiz" element={<QuizPage />} />
         </Routes>
       </div>
     </Router>
