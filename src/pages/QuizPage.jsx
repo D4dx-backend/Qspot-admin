@@ -12,6 +12,8 @@ import {
   FiX
 } from 'react-icons/fi';
 import Sidebar from '../components/Sidebar';
+import ConfirmDialog from '../components/dialogs/ConfirmDialog';
+import brandIcon from '../assets/Icon.png';
 
 const toDateTimeLocal = (isoString) => {
   if (!isoString) return '';
@@ -283,7 +285,7 @@ const QuizPage = () => {
       <div className="flex-1 flex flex-col ml-64">
         <main className="flex-1 p-6 space-y-6">
 
-          <section className="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg relative overflow-hidden">
+          <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#11060d]/70 via-[#1c0b18]/50 to-[#12060f]/70 shadow-[0_20px_60px_-15px_rgba(112,24,69,0.4)] backdrop-blur-xl p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-3xl font-bold text-white flex items-center gap-2">
@@ -372,7 +374,7 @@ const QuizPage = () => {
                   <button
                     type="submit"
                     disabled={savingConfig || configLoading}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 rounded-lg text-white font-medium transition"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#701845]/90 via-[#9E4B63]/80 to-[#EFB078]/85 hover:from-[#5a1538] hover:to-[#d49a6a] disabled:opacity-50 rounded-2xl text-white font-semibold transition-all shadow-[0_8px_20px_rgba(112,24,69,0.3)] border border-white/10"
                   >
                     <FiSave /> {savingConfig ? 'Saving...' : 'Save Configuration'}
                   </button>
@@ -384,7 +386,7 @@ const QuizPage = () => {
             </form>
           </section>
 
-          <section className="bg-gray-900 border border-gray-800 rounded-xl p-6 shadow-lg">
+          <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#11060d]/70 via-[#1c0b18]/50 to-[#12060f]/70 shadow-[0_20px_60px_-15px_rgba(112,24,69,0.4)] backdrop-blur-xl p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div>
                 <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
@@ -433,7 +435,7 @@ const QuizPage = () => {
                       <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-gray-900 divide-y divide-gray-800 text-sm text-gray-200">
+                  <tbody className="divide-y divide-white/5 text-sm text-gray-200">
                     {paginatedAttempts.map((attempt) => (
                       <tr key={attempt.attemptId} className="hover:bg-gray-800/60 transition">
                         <td className="px-4 py-3">{attempt.attemptId?.slice(-8)}</td>
@@ -448,7 +450,7 @@ const QuizPage = () => {
                           <div className="inline-flex items-center gap-2">
                             <button
                               onClick={() => handleViewAttempt(attempt.attemptId)}
-                              className="p-2 rounded-lg bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 transition"
+                              className="p-2 rounded-xl bg-gradient-to-br from-[#701845]/30 to-[#EFB078]/20 text-[#EFB078] hover:border-[#EFB078]/30 hover:text-white transition-all border border-transparent"
                             >
                               <FiEye />
                             </button>
