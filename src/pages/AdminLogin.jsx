@@ -33,7 +33,7 @@ const AdminLogin = () => {
             if (response.data.token) {
                 // Store token in localStorage
                 localStorage.setItem('adminToken', response.data.token);
-                setSuccess('Login successful! Redirecting...');
+                setSuccess('Login successful!');
 
                 // Redirect to admin dashboard or home page
                 setTimeout(() => {
@@ -52,8 +52,13 @@ const AdminLogin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-black flex items-center justify-center py-12 px-2">
-            <div className="w-full max-w-6xl flex items-center justify-between gap-12">
+        <div className="relative min-h-screen bg-black flex items-center justify-center py-12 px-4 overflow-hidden">
+            <div
+                className="pointer-events-none absolute -bottom-36 -left-40 h-[110vh] w-[100vw] rounded-[28rem] bg-gradient-to-br from-[#11060d]/95 via-[#1c0b18]/85 to-[#12060f]/95 opacity-90 blur-[140px]"
+                //  "
+            />
+
+            <div className="relative z-10 w-full max-w-6xl flex items-center justify-between gap-12">
                 {/* Logo Section - Left Side */}
                 <div className="flex-1 flex justify-start">
                     <img
@@ -103,19 +108,13 @@ const AdminLogin = () => {
                             </div>
                         )}
 
-                        {success && (
-                            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md text-sm">
-                                {success}
-                            </div>
-                        )}
-
                         <div className="pt-4">
                             <button
                                 type="submit"
                                 disabled={loading}
                                 className="w-3/4 mx-auto flex justify-center py-3 px-6 rounded-full text-sm font-medium text-white bg-gradient-to-r from-[#701845] to-[#EFB078] hover:from-[#5a1538] hover:to-[#d49a6a] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
                             >
-                                {loading ? 'Signing in...' : 'Sign in'}
+                                {loading ? 'Signing in...' : success ? success : 'Sign in'}
                             </button>
                         </div>
                     </form>

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiChevronLeft, FiChevronRight, FiImage, FiCalendar, FiEye } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlus, FiChevronLeft, FiChevronRight, FiImage, FiCalendar } from 'react-icons/fi';
 import Sidebar from '../components/Sidebar';
+import ConfirmDialog from '../components/dialogs/ConfirmDialog';
+import brandIcon from '../assets/Icon.png';
 
 const BannerPage = () => {
   const [banners, setBanners] = useState([]);
@@ -15,50 +17,22 @@ const BannerPage = () => {
   
   // Pagination and search states
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState('desc');
   const itemsPerPage = 10;
 
   useEffect(() => {
     fetchBanners();
   }, []);
 
-  // Filter and sort banners based on search term and sort options
+  // Sort banners by newest first
   useEffect(() => {
-    let filtered = [...banners];
-
-    // Apply search filter (since banners don't have text content, we'll search by creation date)
-    if (searchTerm) {
-      filtered = filtered.filter(banner => {
-        const dateStr = banner.createdAt ? new Date(banner.createdAt).toLocaleDateString() : '';
-        return dateStr.toLowerCase().includes(searchTerm.toLowerCase());
-      });
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let aValue = a[sortBy];
-      let bValue = b[sortBy];
-
-      if (sortBy === 'createdAt') {
-        aValue = new Date(aValue);
-        bValue = new Date(bValue);
-      } else {
-        aValue = aValue?.toString().toLowerCase() || '';
-        bValue = bValue?.toString().toLowerCase() || '';
-      }
-
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
+    const sorted = [...banners].sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0);
+      const dateB = new Date(b.createdAt || 0);
+      return dateB - dateA;
     });
-
-    setFilteredBanners(filtered);
-    setCurrentPage(1); // Reset to first page when filtering
-  }, [banners, searchTerm, sortBy, sortOrder]);
+    setFilteredBanners(sorted);
+    setCurrentPage(1);
+  }, [banners]);
 
   const fetchBanners = async () => {
     try {
@@ -161,20 +135,6 @@ const BannerPage = () => {
     setCurrentPage(page);
   };
 
-  const handleSort = (column) => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortOrder('asc');
-    }
-  };
-
-  const getSortIcon = (column) => {
-    if (sortBy !== column) return null;
-    return sortOrder === 'asc' ? '↑' : '↓';
-  };
-
   // Statistics
   const totalBanners = banners.length;
   const recentBanners = banners.filter(b => {
@@ -191,80 +151,25 @@ const BannerPage = () => {
       <div className="flex-1 flex flex-col ml-64">
         <main className="flex-1 p-4">
           {/* Header Section */}
-          <div className="mb-4">
+          <div className="mb-8">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-white mb-1">Banner Management</h2>
-                <p className="text-gray-400 text-sm">Manage website banners and promotional images</p>
+                <h2 className="text-2xl font-semibold text-white">Banner Management</h2>
+                <p className="text-sm text-gray-400">Manage website banners and promotional images</p>
               </div>
-              
-              {/* Statistics Cards */}
-              <div className="flex gap-3">
-                <div className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 min-w-[100px]">
-                  <div className="flex items-center gap-2">
-                    <FiImage className="text-indigo-400" size={16} />
-                    <div>
-                      <p className="text-lg font-bold text-white">{totalBanners}</p>
-                      <p className="text-xs text-gray-400">Total</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 min-w-[100px]">
-                  <div className="flex items-center gap-2">
-                    <FiCalendar className="text-green-400" size={16} />
-                    <div>
-                      <p className="text-lg font-bold text-white">{recentBanners}</p>
-                      <p className="text-xs text-gray-400">This Week</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 min-w-[100px]">
-                  <div className="flex items-center gap-2">
-                    <FiEye className="text-yellow-400" size={16} />
-                    <div>
-                      <p className="text-lg font-bold text-white">{filteredBanners.length}</p>
-                      <p className="text-xs text-gray-400">Filtered</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center gap-2 self-start rounded-2xl bg-gradient-to-r from-[#701845]/90 via-[#9E4B63]/80 to-[#EFB078]/85 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(112,24,69,0.3)] transition-all hover:from-[#5a1538] hover:to-[#d49a6a]"
+              >
+                <FiPlus size={14} />
+                <span>Add Banner</span>
+              </button>
             </div>
 
-            {/* Search and Filter Section */}
-            <div className="mt-4 flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                <input
-                  type="text"
-                  placeholder="Search banners by creation date..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                />
-              </div>
-              <div className="flex gap-2">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                >
-                  <option value="createdAt">Sort by Date</option>
-                </select>
-                <button
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white hover:bg-gray-800 transition-colors text-sm"
-                  title={`Sort ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
-                >
-                  {sortOrder === 'asc' ? '↑' : '↓'}
-                </button>
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center space-x-1 transition-colors"
-                >
-                  <FiPlus size={14} />
-                  <span>Add</span>
-                </button>
-              </div>
+            <div className="mt-4">
+              <p className="text-xs uppercase tracking-[0.24em] text-white/45">
+                {totalBanners} Total · {recentBanners} Added This Week
+              </p>
             </div>
           </div>
           {loading ? (
@@ -287,91 +192,74 @@ const BannerPage = () => {
                 <div className="text-center py-8">
                   <FiImage className="mx-auto text-gray-500 mb-3" size={36} />
                   <p className="text-gray-400">
-                    {searchTerm ? 'No banners found matching your search' : 'No banners found'}
+                    No banners found
                   </p>
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="mt-2 text-indigo-400 hover:text-indigo-300 transition-colors text-sm"
-                    >
-                      Clear search
-                    </button>
-                  )}
                 </div>
               ) : (
                 <>
-                  {currentBanners.map((banner) => (
-                    <div key={banner._id} className="bg-gray-900 rounded-lg shadow-md overflow-hidden border border-gray-700 hover:border-gray-600 transition-all duration-300 hover:shadow-lg">
-                      <div className="flex">
-                        {/* Banner Image */}
-                        <div className="w-48 h-32 flex-shrink-0">
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {currentBanners.map((banner) => (
+                      <article
+                        key={banner._id}
+                        className="group relative flex flex-col gap-3 rounded-2xl border border-white/12 bg-gradient-to-br from-[#120714]/85 via-[#1c0b1c]/70 to-[#0e050d]/85 p-4 shadow-[0_18px_46px_-26px_rgba(112,24,69,0.55)] transition-all duration-200 hover:-translate-y-1 hover:border-[#701845]/45 hover:shadow-[0_26px_60px_-28px_rgba(112,24,69,0.65)]"
+                      >
+                        <div className="relative h-32 overflow-hidden rounded-xl border border-white/10 bg-black/40">
                           <img
-                            className="w-full h-full object-cover"
                             src={banner.image}
                             alt="Banner"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                             onError={(e) => {
-                              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiA2VjE4TTYgMTJIMTgiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+';
+                              e.target.src =
+                                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xMiA2VjE4TTYgMTJIMTgiIHN0cm9rZT0iIzlDQTNBRiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+';
                             }}
                           />
                         </div>
-                        
-                        {/* Banner Info */}
-                        <div className="flex-1 p-4">
-                          <div className="flex items-start justify-between h-full">
-                            <div className="flex-1">
-                              <div className="mb-3">
-                                <h3 className="text-lg font-semibold text-white mb-2">Banner Image</h3>
-                                <div className="bg-gray-800 rounded-lg p-3 border-l-4 border-indigo-500">
-                                  <div className="flex items-center space-x-2">
-                                    <FiImage className="text-indigo-400" size={14} />
-                                    <div>
-                                      <p className="text-xs text-gray-400">Image URL</p>
-                                      <p className="text-sm text-white truncate max-w-xs">
-                                        {banner.image}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center space-x-3">
-                                <span className="text-xs text-gray-400 flex items-center">
-                                  <FiCalendar className="mr-1" size={10} />
-                                  Created: {banner.createdAt ? new Date(banner.createdAt).toLocaleDateString() : 'Unknown date'}
-                                </span>
-                                <span className="text-xs text-gray-400">
-                                  {banner.createdAt ? new Date(banner.createdAt).toLocaleTimeString() : ''}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            <div className="flex space-x-1 ml-4">
+                        <div className="flex flex-1 flex-col gap-2">
+                          <h3 className="text-sm font-semibold text-white leading-snug">
+                            Banner
+                          </h3>
+                          <div className="rounded-xl border border-white/10 bg-white/5 p-2 text-[11px] text-white/75">
+                            <span className="font-medium text-white/85">Image URL</span>
+                            <p className="mt-1 truncate text-white/65">{banner.image}</p>
+                          </div>
+                          <div className="mt-auto flex items-center justify-between text-[11px] text-white/60">
+                            <span className="inline-flex items-center gap-1">
+                              <FiCalendar size={11} className="text-[#EFB078]" />
+                              {banner.createdAt
+                                ? new Date(banner.createdAt).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })
+                                : 'Unknown date'}
+                            </span>
+                            <div className="flex gap-1.5">
                               <button
                                 onClick={() => handleEditBanner(banner)}
-                                className="flex items-center space-x-1 px-2 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-xs font-medium"
+                                className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white/75 transition-all hover:border-[#EFB078]/40 hover:text-white"
                                 title="Edit banner"
+                                aria-label="Edit banner"
                               >
                                 <FiEdit2 size={12} />
-                                <span>Edit</span>
                               </button>
                               <button
                                 onClick={() => setDeleteConfirm(banner)}
-                                className="flex items-center space-x-1 px-2 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-xs font-medium"
+                                className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white/75 transition-all hover:border-red-400/60 hover:text-red-200"
                                 title="Delete banner"
+                                aria-label="Delete banner"
                               >
                                 <FiTrash2 size={12} />
-                                <span>Delete</span>
                               </button>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
+                      </article>
+                    ))}
+                  </div>
 
                   {/* Pagination */}
                   {totalPages > 1 && (
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 mt-4">
+                    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#11060d]/60 via-[#1c0b18]/40 to-[#12060f]/60 backdrop-blur-xl p-4 mt-4">
                       <div className="flex items-center justify-between">
                         <div className="text-xs text-gray-400">
                           Showing {startIndex + 1} to {Math.min(endIndex, filteredBanners.length)} of {filteredBanners.length} banners
@@ -380,7 +268,7 @@ const BannerPage = () => {
                           <button
                             onClick={() => handlePageChange(currentPage - 1)}
                             disabled={currentPage === 1}
-                            className="p-1.5 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 transition-all hover:border-[#EFB078]/40 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             <FiChevronLeft size={14} />
                           </button>
@@ -396,10 +284,10 @@ const BannerPage = () => {
                                 <button
                                   key={page}
                                   onClick={() => handlePageChange(page)}
-                                  className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                  className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold tracking-[0.16em] transition-all ${
                                     currentPage === page
-                                      ? 'bg-indigo-600 text-white'
-                                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                      ? 'bg-gradient-to-r from-[#701845]/85 via-[#9E4B63]/75 to-[#EFB078]/70 text-white shadow-[0_8px_24px_rgba(112,24,69,0.35)]'
+                                      : 'border border-white/10 bg-white/5 text-white/70 hover:border-[#EFB078]/40 hover:text-white'
                                   }`}
                                 >
                                   {page}
@@ -417,7 +305,7 @@ const BannerPage = () => {
                           <button
                             onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
-                            className="p-1.5 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/60 transition-all hover:border-[#EFB078]/40 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             <FiChevronRight size={14} />
                           </button>
@@ -454,9 +342,13 @@ const BannerPage = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <DeleteConfirmModal
-          banner={deleteConfirm}
-          onClose={() => setDeleteConfirm(null)}
+        <ConfirmDialog
+          title="Delete Banner"
+          description="Are you sure you want to delete this banner? This action cannot be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          confirmVariant="danger"
+          onCancel={() => setDeleteConfirm(null)}
           onConfirm={() => handleDeleteBanner(deleteConfirm._id)}
         />
       )}
@@ -470,6 +362,14 @@ const CreateBannerModal = ({ onClose, onSave }) => {
     image: null
   });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -489,34 +389,54 @@ const CreateBannerModal = ({ onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-4 border border-gray-700 w-96 shadow-2xl rounded-md bg-gray-900">
-        <div className="mt-2">
-          <h3 className="text-lg font-medium text-white mb-3">Add New Banner</h3>
-          <form onSubmit={handleSubmit} className="space-y-3">
+    <div className="fixed inset-0 z-[120] flex h-full w-full items-center justify-center overflow-y-auto bg-black/70 px-4 py-10 backdrop-blur-md">
+      <div className="relative w-full max-w-md overflow-visible rounded-3xl border border-white/12 bg-gradient-to-br from-[#100713]/92 via-[#190d23]/85 to-[#10060f]/92 shadow-[0_24px_64px_-28px_rgba(12,6,20,0.9)]">
+        <div
+          className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_top_right,rgba(136,32,82,0.55),transparent_65%)]"
+          aria-hidden="true"
+        />
+
+        <div className="relative px-7 pt-8 pb-7">
+          <div className="absolute left-7 top-6 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/12 bg-black/60 shadow-[0_12px_30px_rgba(136,32,82,0.4)]">
+            <img src={brandIcon} alt="QSpot icon" className="h-6 w-6 object-contain" />
+          </div>
+
+          <div className="flex flex-col gap-1.5 pl-16">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#f3c5a0]/70">
+              Banner
+            </p>
+            <h3 className="text-xl font-semibold tracking-wide text-white">Add New Banner</h3>
+            <p className="text-xs text-white/70">
+              Upload a banner image to highlight content.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4.5">
             <div>
-              <label className="block text-sm font-medium text-gray-300">Banner Image *</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/65">
+                Banner Image *
+              </label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-2 block w-full rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-[13px] text-white placeholder-white/40 backdrop-blur-sm transition-all duration-200 focus:border-[#EFB078]/60 focus:outline-none focus:ring-0"
                 required
               />
-              <p className="text-xs text-gray-400 mt-1">Recommended size: 1200x400px or similar aspect ratio</p>
+              <p className="mt-1 text-[10px] text-white/60">Recommended size: 1200x400px</p>
             </div>
-            <div className="flex justify-end space-x-2 pt-3">
+            <div className="flex items-center justify-end gap-2.5 pt-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
+                className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75 transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-gradient-to-r from-[#701845]/90 via-[#9E4B63]/80 to-[#EFB078]/85 px-4.5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_16px_34px_rgba(136,32,82,0.45)] transition-all duration-200 hover:scale-[1.01] disabled:opacity-50 disabled:shadow-none"
               >
                 {loading ? 'Creating...' : 'Create Banner'}
               </button>
@@ -535,6 +455,14 @@ const EditBannerModal = ({ banner, onClose, onSave }) => {
   });
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -553,83 +481,68 @@ const EditBannerModal = ({ banner, onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-4 border border-gray-700 w-96 shadow-2xl rounded-md bg-gray-900">
-        <div className="mt-2">
-          <h3 className="text-lg font-medium text-white mb-3">Edit Banner</h3>
-          <form onSubmit={handleSubmit} className="space-y-3">
+    <div className="fixed inset-0 z-[120] flex h-full w-full items-center justify-center overflow-y-auto bg-black/70 px-4 py-10 backdrop-blur-md">
+      <div className="relative w-full max-w-md overflow-visible rounded-3xl border border-white/12 bg-gradient-to-br from-[#100713]/92 via-[#190d23]/85 to-[#10060f]/92 shadow-[0_24px_64px_-28px_rgba(12,6,20,0.9)]">
+        <div
+          className="pointer-events-none absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_top_right,rgba(136,32,82,0.55),transparent_65%)]"
+          aria-hidden="true"
+        />
+
+        <div className="relative px-7 pt-8 pb-7">
+          <div className="absolute left-7 top-6 flex h-10 w-10 items-center justify-center rounded-2xl border border-white/12 bg-black/60 shadow-[0_12px_30px_rgba(136,32,82,0.4)]">
+            <img src={brandIcon} alt="QSpot icon" className="h-6 w-6 object-contain" />
+          </div>
+
+          <div className="flex flex-col gap-1.5 pl-16">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#f3c5a0]/70">
+              Banner
+            </p>
+            <h3 className="text-xl font-semibold tracking-wide text-white">Edit Banner</h3>
+            <p className="text-xs text-white/70">
+              Update the banner image or keep the current one.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4.5">
             <div>
-              <label className="block text-sm font-medium text-gray-300">Current Image</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/65">
+                Current Image
+              </label>
               <img
                 src={banner.image}
                 alt="Current banner"
-                className="mt-2 w-full h-32 object-cover rounded-md border border-gray-600"
+                className="mt-2 h-32 w-full rounded-2xl border border-white/15 object-cover"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300">New Image (optional)</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/65">
+                New Image (optional)
+              </label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="mt-2 block w-full rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-[13px] text-white placeholder-white/40 backdrop-blur-sm transition-all duration-200 focus:border-[#EFB078]/60 focus:outline-none focus:ring-0"
               />
-              <p className="text-xs text-gray-400 mt-1">Leave empty to keep current image</p>
+              <p className="mt-1 text-[10px] text-white/60">Leave empty to keep current image</p>
             </div>
-            <div className="flex justify-end space-x-2 pt-3">
+            <div className="flex items-center justify-end gap-2.5 pt-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
+                className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75 transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-gradient-to-r from-[#701845]/90 via-[#9E4B63]/80 to-[#EFB078]/85 px-4.5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white shadow-[0_16px_34px_rgba(136,32,82,0.45)] transition-all duration-200 hover:scale-[1.01] disabled:opacity-50 disabled:shadow-none"
               >
                 {loading ? 'Updating...' : 'Update Banner'}
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Delete Confirmation Modal Component
-const DeleteConfirmModal = ({ banner, onClose, onConfirm }) => {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-4 border border-gray-700 w-96 shadow-2xl rounded-md bg-gray-900">
-        <div className="mt-2">
-          <h3 className="text-lg font-medium text-white mb-3">Delete Banner</h3>
-          <div className="mb-3">
-            <img
-              src={banner.image}
-              alt="Banner to delete"
-              className="w-full h-32 object-cover rounded-md border border-gray-600"
-            />
-          </div>
-          <p className="text-sm text-gray-400 mb-4">
-            Are you sure you want to delete this banner? This action cannot be undone and will also delete the banner image.
-          </p>
-          <div className="flex justify-end space-x-2">
-            <button
-              onClick={onClose}
-              className="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={onConfirm}
-              className="px-3 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
-            >
-              Delete
-            </button>
-          </div>
         </div>
       </div>
     </div>
