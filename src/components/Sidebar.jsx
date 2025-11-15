@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   FaUsers, 
   FaUserTie, 
@@ -49,6 +49,13 @@ const Sidebar = ({ currentPage, onNavigate }) => {
       path: '/admin/quiz'
     },
     {
+      id: 'quizAttempts',
+      label: 'Quiz Attempts',
+      icon: FaClipboardList,
+      path: '/admin/quiz/attempts',
+      parent: 'quiz'
+    },
+    {
       id: 'schedules',
       label: 'Schedules',
       icon: FaCalendarAlt,
@@ -73,6 +80,16 @@ const Sidebar = ({ currentPage, onNavigate }) => {
       path: '/admin/banner'
     }
   ];
+
+  const childLookup = useMemo(() => {
+    return menuItems.reduce((acc, item) => {
+      if (item.parent) {
+        acc[item.parent] = acc[item.parent] || [];
+        acc[item.parent].push(item.id);
+      }
+      return acc;
+    }, {});
+  }, [menuItems]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -100,7 +117,27 @@ const Sidebar = ({ currentPage, onNavigate }) => {
         <nav className="relative flex-1 overflow-y-auto px-4 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <ul className="space-y-2">
             {menuItems.map((item) => {
-              const isActive = currentPage === item.id;
+              if (item.parent) {
+                return (
+                  <li key={item.id} className="pl-8">
+                    <button
+                      onClick={() => onNavigate(item.path)}
+                      className={`group flex w-full items-center gap-2 rounded-xl border border-white/5 px-3 py-2 text-left text-xs font-medium tracking-wide transition-all duration-200 ${
+                        currentPage === item.id
+                          ? 'bg-gradient-to-r from-[#701845]/45 to-[#EFB078]/30 text-white shadow-[0_12px_32px_rgba(112,24,69,0.25)]'
+                          : 'bg-white/5 text-slate-100/80 hover:border-[#701845]/45 hover:bg-gradient-to-r hover:from-[#701845]/20 hover:to-[#EFB078]/30 hover:text-white'
+                      }`}
+                    >
+                      <span className="flex h-6 w-6 items-center justify-center rounded-md border border-white/5 bg-white/5 text-xs">
+                        <item.icon />
+                      </span>
+                      <span className="flex-1">{item.label}</span>
+                    </button>
+                  </li>
+                );
+              }
+              const childIds = childLookup[item.id] || [];
+              const isActive = currentPage === item.id || childIds.includes(currentPage);
               return (
             <li key={item.id}>
               <button
