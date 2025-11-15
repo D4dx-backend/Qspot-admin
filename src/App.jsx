@@ -10,6 +10,7 @@ import VideosPage from './pages/VideosPage';
 import SubjectsPage from './pages/SubjectsPage';
 import SchedulesPage from './pages/SchedulesPage';
 import QuizPage from './pages/QuizPage';
+import QuizAttemptsPage from './pages/QuizAttemptsPage';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/admin/subjects" element={<SubjectsPage />} />
           <Route path="/admin/schedules" element={<SchedulesPage />} />
           <Route path="/admin/quiz" element={<QuizPage />} />
+          <Route path="/admin/quiz/attempts" element={<QuizAttemptsPage />} />
         </Routes>
       </div>
     </Router>
