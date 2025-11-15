@@ -157,6 +157,7 @@ const QuizPage = () => {
   const [questionsError, setQuestionsError] = useState('');
   const [questions, setQuestions] = useState([]);
   const [questionSearch, setQuestionSearch] = useState('');
+  const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [questionForm, setQuestionForm] = useState(DEFAULT_QUESTION_FORM);
@@ -480,17 +481,24 @@ useEffect(() => {
 
 
   const filteredQuestions = useMemo(() => {
-    if (!questionSearch) return questions;
-    const query = questionSearch.toLowerCase();
+    const query = questionSearch.trim().toLowerCase();
+    const difficulty = difficultyFilter.toLowerCase();
+
     return questions.filter((question) => {
-      return (
+      const matchesSearch =
+        !query ||
         question.question_en?.toLowerCase().includes(query) ||
         question.question_ml?.toLowerCase().includes(query) ||
         question.type?.toLowerCase().includes(query) ||
-        question.difficulty?.toLowerCase().includes(query)
-      );
+        question.difficulty?.toLowerCase().includes(query);
+
+      const matchesDifficulty =
+        difficulty === 'all' ||
+        (question.difficulty || '').toLowerCase() === difficulty;
+
+      return matchesSearch && matchesDifficulty;
     });
-  }, [questionSearch, questions]);
+  }, [questionSearch, difficultyFilter, questions]);
 
   const questionSummary = useMemo(() => {
     const total = questions.length;
@@ -527,41 +535,20 @@ useEffect(() => {
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.35em] text-white/50">Admin Dashboard</p>
               <h1 className="text-3xl font-semibold text-white">Quiz Management</h1>
-              <p className="text-sm text-white/65 max-w-3xl">
-                Configure live quiz schedules and curate the bilingual question bank that powers each attempt.
-              </p>
             </div>
 
-            <div className="w-full grid gap-5 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.5fr)] items-start">
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0d050d]/85 via-[#190816]/60 to-[#080309]/75 p-4 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
-                  <p className="text-[11px] uppercase tracking-[0.35em] text-white/50">Stats</p>
-                  <div className="mt-3 grid grid-cols-2 gap-3 text-white">
-                    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-[0.25em] text-white/50">Total</p>
-                      <p className="text-2xl font-semibold">{questionSummary.total}</p>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-[0.25em] text-white/50">Unique</p>
-                      <p className="text-2xl font-semibold">{questionSummary.uniqueTypes}</p>
-                    </div>
-                    <div className="col-span-2 rounded-xl border border-white/10 bg-white/5 px-3 py-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.25em] text-white/50">Top Difficulty</p>
-                        <p className="text-lg font-semibold">{questionSummary.topDifficulty}</p>
-                      </div>
-                      <span className="text-xs text-white/60">
-                        Updated {formatRelativeTime(questionSummary.lastUpdated)}
-                      </span>
-                    </div>
-                  </div>
+            <div className="w-full grid gap-5 lg:grid-cols-[minmax(240px,1fr)_minmax(0,1.5fr)] items-stretch">
+              <div className="flex flex-col gap-4 h-full">
+                <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0d050d]/85 via-[#190816]/60 to-[#080309]/75 px-4 py-3 shadow-[0_10px_24px_rgba(0,0,0,0.35)]">
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-white/45">Top Difficulty</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{questionSummary.topDifficulty}</p>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0d050d]/80 via-[#190816]/60 to-[#080309]/75 p-4 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
+                <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0d050d]/80 via-[#190816]/60 to-[#080309]/75 p-4 shadow-[0_12px_34px_rgba(0,0,0,0.35)] space-y-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/60">
                     Question Filters
                   </p>
-                  <div className="relative mt-3">
+                  <div className="relative">
                     <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={15} />
                     <input
                       type="search"
@@ -570,6 +557,36 @@ useEffect(() => {
                       placeholder="Search text, type, difficulty"
                       className="w-full rounded-xl border border-white/12 bg-black/30 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/40 focus:border-[#EFB078]/50 focus:outline-none"
                     />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {['all', 'easy', 'medium', 'hard'].map((option) => {
+                      const checked = difficultyFilter === option;
+                      return (
+                        <label
+                          key={option}
+                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] cursor-pointer transition ${
+                            checked
+                              ? 'border-[#EFB078]/70 bg-[#EFB078]/15 text-white'
+                              : 'border-white/15 bg-white/5 text-white/60 hover:border-white/30 hover:text-white'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="difficulty-filter"
+                            value={option}
+                            checked={checked}
+                            onChange={() => setDifficultyFilter(option)}
+                            className="sr-only"
+                          />
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full border ${
+                              checked ? 'border-white bg-[#EFB078]' : 'border-white/40'
+                            }`}
+                          />
+                          {option}
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -584,8 +601,8 @@ useEffect(() => {
                 </div>
               </div>
 
-              <div className="w-full space-y-4 max-w-2xl mx-auto">
-                <section className="relative overflow-hidden rounded-[24px] border border-white/12 bg-gradient-to-br from-[#12060f]/78 via-[#1a0815]/65 to-[#10050c]/78 shadow-[0_12px_38px_-18px_rgba(112,24,69,0.55)] backdrop-blur-xl p-4">
+               <div className="w-full max-w-2xl mx-auto">
+                <section className="relative overflow-hidden rounded-[24px] border border-white/12 bg-gradient-to-br from-[#12060f]/78 via-[#1a0815]/65 to-[#10050c]/78 shadow-[0_12px_38px_-18px_rgba(112,24,69,0.55)] backdrop-blur-xl p-4 min-h-[360px] flex flex-col h-full">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                     <div className="space-y-1">
                       <h1 className="text-2xl font-semibold text-white">
@@ -626,11 +643,11 @@ useEffect(() => {
                   </div>
 
                   {configLoading ? (
-                    <div className="flex items-center justify-center py-10">
+                    <div className="flex flex-1 items-center justify-center py-10">
                       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-400"></div>
                     </div>
                   ) : hasConfig ? (
-                    <dl className="mt-5 space-y-2">
+                    <dl className="mt-5 space-y-2 flex-1 overflow-y-auto pr-1">
                       <div className="flex items-center justify-between rounded-2xl border border-white/12 bg-gradient-to-r from-[#701845]/18 via-transparent to-transparent px-4 py-2.5">
                         <dt className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-gray-400">
                           <FiCalendar className="text-[#EFB078]" /> Start
@@ -667,7 +684,7 @@ useEffect(() => {
                       </div>
                     </dl>
                   ) : (
-                    <div className="mt-6 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-8 text-center text-gray-300">
+                    <div className="mt-6 flex flex-1 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-8 text-center text-gray-300">
                       <p className="text-sm">No quiz configuration yet. Click add to schedule the next quiz.</p>
                       <button
                         onClick={() => setShowEditor(true)}
@@ -677,11 +694,7 @@ useEffect(() => {
                       </button>
                     </div>
                   )}
-                  {hasConfig && !showEditor && configMessage && (
-                    <div className="mt-4 bg-green-900/20 border border-green-500/30 text-green-300 px-4 py-3 rounded-xl">
-                      {configMessage}
-                    </div>
-                  )}
+                  
                   {hasConfig && !showEditor && configError && (
                     <div className="mt-4 bg-red-900/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl">
                       {configError}
@@ -717,7 +730,7 @@ useEffect(() => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {filteredQuestions.map((question) => {
                     const difficulty = question.difficulty || 'NA';
                     const difficultyTone = (() => {
@@ -733,31 +746,22 @@ useEffect(() => {
                         type="button"
                         key={question._id}
                         onClick={() => openQuestionDetail(question)}
-                        className="group flex h-full flex-col gap-3 rounded-2xl border border-white/10 bg-gradient-to-br from-[#11060d]/75 via-[#1c0b18]/55 to-[#12060f]/75 p-4 text-left shadow-[0_10px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-all duration-200 hover:border-[#EFB078]/40"
+                         className="group flex h-full flex-col gap-2 rounded-2xl border border-white/10 bg-gradient-to-br from-[#11060d]/75 via-[#1c0b18]/55 to-[#12060f]/75 p-4 text-left shadow-[0_10px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-all duration-200 hover:border-[#EFB078]/40"
                       >
-                        <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/60">
-                          <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[10px] font-semibold">
+                        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] text-white/60">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/30 px-3 py-1 font-semibold">
                             <FiLayers /> {question.type || 'General'}
                           </span>
-                          <span className="text-white/40">
-                            {formatRelativeTime(question.updatedAt || question.createdAt)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between gap-2 text-[11px] uppercase tracking-[0.3em]">
-                          <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold ${difficultyTone}`}>
+                          <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold ${difficultyTone}`}>
                             {difficulty}
                           </span>
-                          <span className="text-white/50 font-mono text-[10px]">
-                            {question._id?.slice(-6)}
-                          </span>
                         </div>
-                        <div>
-                          <p className="text-base font-semibold text-white line-clamp-2">{question.question_en}</p>
-                          <p className="mt-1 text-sm text-white/65 line-clamp-2">{question.question_ml}</p>
-                        </div>
-                        <div className="mt-auto flex items-center justify-between text-xs text-white/60">
-                          <span className="font-semibold text-white">Tap to view</span>
-                          <FiChevronRight className="text-white/50 transition group-hover:translate-x-1" />
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="space-y-1">
+                            <p className="text-base font-semibold text-white line-clamp-2">{question.question_en}</p>
+                            <p className="text-sm text-white/65 line-clamp-2">{question.question_ml}</p>
+                          </div>
+                          <FiChevronRight className="flex-none text-white/40 transition group-hover:translate-x-1" />
                         </div>
                       </button>
                     );
@@ -966,24 +970,28 @@ useEffect(() => {
           />
           <section className="relative z-[160] w-full max-w-4xl overflow-hidden rounded-[32px] border border-white/12 bg-gradient-to-br from-[#0a050d]/95 via-[#160717]/85 to-[#0a040d]/95 shadow-[0_26px_64px_-18px_rgba(112,24,69,0.55)]">
             <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-white/10">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/50">
-                  Question Detail
-                </p>
-                <h3 className="mt-1 text-2xl font-semibold text-white flex items-center gap-2">
-                  <FiBookOpen className="text-[#EFB078]" /> {activeQuestionDetail.type || 'General'}
-                </h3>
+              <div className="flex items-center gap-3">
+                <img src={brandIcon} alt="Qspot logo" className="h-10 w-10 rounded-2xl border border-white/15 bg-black/40 p-1" />
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/50">
+                    Question Detail
+                  </p>
+                  <h3 className="mt-1 text-2xl font-semibold text-white">
+                    {activeQuestionDetail.type || 'General'}
+                  </h3>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 text-white/70">
                 <button
                   type="button"
                   onClick={() => {
                     openQuestionEditor(activeQuestionDetail);
                     closeQuestionDetail();
                   }}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-white hover:border-[#EFB078]/40 hover:text-[#EFB078] transition"
+                  className="p-2 hover:text-[#EFB078] transition"
+                  aria-label="Edit question"
                 >
-                  <FiEdit2 size={16} /> Edit
+                  <FiEdit2 size={18} />
                 </button>
                 <button
                   type="button"
@@ -991,17 +999,18 @@ useEffect(() => {
                     setQuestionDeleteTarget(activeQuestionDetail);
                     closeQuestionDetail();
                   }}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/20 transition"
+                  className="p-2 hover:text-red-300 transition"
                   aria-label="Delete question"
                 >
-                  <FiTrash2 />
+                  <FiTrash2 size={18} />
                 </button>
                 <button
                   type="button"
                   onClick={closeQuestionDetail}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 hover:border-white/30 hover:text-white transition"
+                  className="p-2 hover:text-white transition"
+                  aria-label="Close detail"
                 >
-                  <FiX size={18} />
+                  <FiX size={20} />
                 </button>
               </div>
             </div>
@@ -1012,12 +1021,6 @@ useEffect(() => {
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-semibold">
                   {activeQuestionDetail.difficulty || 'NA'}
-                </span>
-                <span className="text-white/40 text-[10px]">
-                  {formatRelativeTime(activeQuestionDetail.updatedAt || activeQuestionDetail.createdAt)}
-                </span>
-                <span className="ml-auto text-white/60 text-[10px] font-mono">
-                  ID: {activeQuestionDetail._id}
                 </span>
               </div>
               <div className="rounded-2xl border border-white/12 bg-black/25 p-5 shadow-[0_12px_36px_rgba(0,0,0,0.35)]">
@@ -1056,15 +1059,15 @@ useEffect(() => {
                   );
                 })}
               </div>
-              <div className="flex flex-wrap gap-6 text-sm text-white/70">
-                <div>
-                  <span className="text-white/40 text-[11px] uppercase tracking-[0.3em]">
+              <div className="grid gap-4 sm:grid-cols-2 text-sm text-white/80">
+                <div className="rounded-2xl border border-white/12 bg-black/30 p-4">
+                  <span className="text-white/40 text-[11px] uppercase tracking-[0.3em] block mb-2">
                     Correct Answer
                   </span>
                   <p className="text-white font-semibold">{activeQuestionDetail.correct_answer}</p>
                 </div>
-                <div>
-                  <span className="text-white/40 text-[11px] uppercase tracking-[0.3em]">
+                <div className="rounded-2xl border border-white/12 bg-black/30 p-4">
+                  <span className="text-white/40 text-[11px] uppercase tracking-[0.3em] block mb-2">
                     Difficulty
                   </span>
                   <p className="text-white font-semibold">{activeQuestionDetail.difficulty || 'NA'}</p>
@@ -1108,15 +1111,19 @@ useEffect(() => {
             className="relative z-[160] w-full max-w-4xl overflow-hidden rounded-[32px] border border-white/12 bg-gradient-to-br from-[#0a050d]/95 via-[#160717]/85 to-[#0a040d]/95 p-6 shadow-[0_26px_64px_-18px_rgba(112,24,69,0.55)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/50">
-                  Question Manager
-                </p>
-                <h3 className="mt-1 text-2xl font-semibold text-white flex items-center gap-2">
-                  <FiBookOpen className="text-[#EFB078]" />
-                  {editingQuestion ? 'Edit Question' : 'Create Question'}
-                </h3>
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/12 bg-black/50 shadow-[0_14px_36px_rgba(136,32,82,0.45)]">
+                  <img src={brandIcon} alt="QSpot icon" className="h-7 w-7 object-contain" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/50">
+                    Question Manager
+                  </p>
+                  <h3 className="mt-1 text-2xl font-semibold text-white">
+                    {editingQuestion ? 'Edit Question' : 'Create Question'}
+                  </h3>
+                </div>
               </div>
               <button
                 type="button"
@@ -1130,7 +1137,7 @@ useEffect(() => {
 
             <form onSubmit={handleSaveQuestion} className="mt-6 space-y-5">
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 flex flex-col gap-2">
                   Type *
                   <input
                     type="text"
@@ -1141,7 +1148,7 @@ useEffect(() => {
                     required
                   />
                 </label>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 flex flex-col gap-2">
                   Difficulty *
                   <input
                     type="text"
@@ -1155,7 +1162,7 @@ useEffect(() => {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 flex flex-col gap-2">
                   Question (English) *
                   <textarea
                     value={questionForm.question_en}
@@ -1164,7 +1171,7 @@ useEffect(() => {
                     required
                   />
                 </label>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 flex flex-col gap-2">
                   Question (Malayalam) *
                   <textarea
                     value={questionForm.question_ml}
@@ -1176,7 +1183,7 @@ useEffect(() => {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 flex flex-col gap-2">
                   Options (English) *
                   <textarea
                     value={questionForm.options_en}
@@ -1186,7 +1193,7 @@ useEffect(() => {
                     required
                   />
                 </label>
-                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 flex flex-col gap-2">
                   Options (Malayalam) *
                   <textarea
                     value={questionForm.options_ml}
@@ -1197,7 +1204,7 @@ useEffect(() => {
                 </label>
               </div>
 
-              <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 space-y-2 block">
+              <label className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60 flex flex-col gap-2">
                 Correct Answer *
                 <input
                   type="text"
@@ -1218,16 +1225,16 @@ useEffect(() => {
                 <button
                   type="button"
                   onClick={closeQuestionEditor}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2 text-white hover:border-white/30 transition"
+                  className="rounded-lg border border-white/10 bg-white/5 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/75 transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/30"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={questionSaving}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-gradient-to-r from-[#701845]/90 via-[#9E4B63]/80 to-[#EFB078]/85 px-6 py-3 font-semibold text-white shadow-[0_8px_20px_rgba(112,24,69,0.3)] transition disabled:opacity-50"
+                  className="rounded-lg bg-gradient-to-r from-[#701845]/90 via-[#9E4B63]/80 to-[#EFB078]/85 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_16px_34px_rgba(136,32,82,0.45)] transition-all duration-200 hover:scale-[1.01] disabled:opacity-50 disabled:shadow-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EFB078]/70"
                 >
-                  <FiSave /> {questionSaving ? 'Saving...' : 'Save Question'}
+                  {questionSaving ? 'Saving...' : 'Save Question'}
                 </button>
               </div>
             </form>
