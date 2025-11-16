@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import {
   FiActivity,
-  FiAlertCircle,
-  FiClock,
   FiRefreshCw,
   FiSearch,
+  FiTrash2,
   FiUsers
 } from 'react-icons/fi';
 import Sidebar from '../components/Sidebar';
-import brandIcon from '../assets/Icon.png';
+import ConfirmDialog from '../components/dialogs/ConfirmDialog';
 
 const formatDuration = (seconds) => {
   const value = Number(seconds);
@@ -20,25 +20,17 @@ const formatDuration = (seconds) => {
   return `${mins}m ${secs.toString().padStart(2, '0')}s`;
 };
 
-const formatDateTime = (isoString) => {
-  if (!isoString) return 'NA';
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) return 'NA';
-  return date.toLocaleString();
-};
-
 const QuizAttemptsPage = () => {
   const baseURL = import.meta.env.VITE_API_BASE_URL;
   const token = useMemo(() => localStorage.getItem('adminToken'), []);
+  const navigate = useNavigate();
 
   const [attempts, setAttempts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedAttemptId, setSelectedAttemptId] = useState(null);
-  const [selectedAttempt, setSelectedAttempt] = useState(null);
   const [tableLoading, setTableLoading] = useState(true);
-  const [detailsLoading, setDetailsLoading] = useState(false);
   const [tableError, setTableError] = useState('');
-  const [detailsError, setDetailsError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleNavigate = (path) => {
     window.location.href = path;
@@ -58,50 +50,17 @@ const QuizAttemptsPage = () => {
       });
       const attendees = Array.isArray(response.data?.attendees) ? response.data.attendees : [];
       setAttempts(attendees);
-      if (attendees.length && !selectedAttemptId) {
-        setSelectedAttemptId(attendees[0].attemptId);
-      } else if (!attendees.length) {
-        setSelectedAttemptId(null);
-        setSelectedAttempt(null);
-      }
     } catch (error) {
       console.error('Error fetching quiz attempts:', error);
       setTableError(error.response?.data?.message || 'Failed to load quiz attempts.');
     } finally {
       setTableLoading(false);
     }
-  }, [baseURL, token, selectedAttemptId]);
-
-  const fetchAttemptDetails = useCallback(async (attemptId) => {
-    if (!attemptId) return;
-    if (!baseURL || !token) {
-      setDetailsError('Missing configuration or authentication token.');
-      return;
-    }
-    try {
-      setDetailsLoading(true);
-      setDetailsError('');
-      const response = await axios.get(`${baseURL}/quizzes/attempt/${attemptId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSelectedAttempt(response.data);
-    } catch (error) {
-      console.error('Error fetching attempt details:', error);
-      setDetailsError(error.response?.data?.message || 'Failed to load attempt details.');
-    } finally {
-      setDetailsLoading(false);
-    }
   }, [baseURL, token]);
 
   useEffect(() => {
     fetchAttempts();
   }, [fetchAttempts]);
-
-  useEffect(() => {
-    if (selectedAttemptId) {
-      fetchAttemptDetails(selectedAttemptId);
-    }
-  }, [selectedAttemptId, fetchAttemptDetails]);
 
   const filteredAttempts = useMemo(() => {
     if (!searchTerm.trim()) return attempts;
@@ -114,8 +73,25 @@ const QuizAttemptsPage = () => {
     });
   }, [attempts, searchTerm]);
 
-  const handleRowSelect = (attemptId) => {
-    setSelectedAttemptId(attemptId);
+  const handleViewAttempt = (attemptId) => {
+    navigate(`/admin/quiz/attempts/${attemptId}`);
+  };
+
+  const handleDeleteAttempt = async () => {
+    if (!deleteTarget || !baseURL || !token) return;
+    try {
+      setDeleteLoading(true);
+      await axios.delete(`${baseURL}/quizzes/attempt/${deleteTarget.attemptId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDeleteTarget(null);
+      fetchAttempts();
+    } catch (error) {
+      console.error('Error deleting quiz attempt:', error);
+      setTableError(error.response?.data?.message || 'Failed to delete quiz attempt.');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -154,8 +130,7 @@ const QuizAttemptsPage = () => {
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-          <section className="rounded-2xl border border-white/5 bg-gradient-to-b from-[#12091f]/90 to-[#0b0714]/95 p-5 shadow-[0_25px_60px_rgba(5,3,10,0.55)]">
+        <section className="rounded-2xl border border-white/5 bg-gradient-to-b from-[#12091f]/90 to-[#0b0714]/95 p-5 shadow-[0_25px_60px_rgba(5,3,10,0.55)]">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="relative flex-1">
                 <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
@@ -182,35 +157,31 @@ const QuizAttemptsPage = () => {
                       <th className="px-4 py-3 font-semibold">Score</th>
                       <th className="px-4 py-3 font-semibold">Percentage</th>
                       <th className="px-4 py-3 font-semibold">Duration</th>
+                      <th className="px-4 py-3 font-semibold text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {tableLoading && (
                       <tr>
-                        <td colSpan={4} className="px-4 py-6 text-center text-white/60">
+                        <td colSpan={5} className="px-4 py-6 text-center text-white/60">
                           Loading attempts…
                         </td>
                       </tr>
                     )}
                     {!tableLoading && !filteredAttempts.length && (
                       <tr>
-                        <td colSpan={4} className="px-4 py-6 text-center text-white/60">
+                        <td colSpan={5} className="px-4 py-6 text-center text-white/60">
                           No attempts found.
                         </td>
                       </tr>
                     )}
                     {!tableLoading &&
                       filteredAttempts.map((attempt) => {
-                        const isActive = selectedAttemptId === attempt.attemptId;
                         return (
                           <tr
                             key={attempt.attemptId}
-                            className={`cursor-pointer transition ${
-                              isActive
-                                ? 'bg-[#701845]/30 text-white'
-                                : 'bg-transparent text-white/85 hover:bg-white/5'
-                            }`}
-                            onClick={() => handleRowSelect(attempt.attemptId)}
+                            className="transition text-white/85 hover:bg-white/5"
+                            onClick={() => handleViewAttempt(attempt.attemptId)}
                           >
                             <td className="px-4 py-3">
                               <div className="flex flex-col">
@@ -221,6 +192,19 @@ const QuizAttemptsPage = () => {
                             <td className="px-4 py-3 font-semibold">{attempt.score}</td>
                             <td className="px-4 py-3">{attempt.percentage}%</td>
                             <td className="px-4 py-3">{formatDuration(attempt.duration)}</td>
+                            <td className="px-4 py-3">
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setDeleteTarget(attempt);
+                                }}
+                                className="flex items-center justify-center text-red-300 transition hover:text-red-200"
+                                aria-label="Delete attempt"
+                              >
+                                <FiTrash2 size={18} />
+                              </button>
+                            </td>
                           </tr>
                         );
                       })}
@@ -228,133 +212,23 @@ const QuizAttemptsPage = () => {
                 </table>
               </div>
             </div>
-          </section>
-
-          <section className="rounded-2xl border border-white/5 bg-gradient-to-b from-[#0a0818]/92 to-[#05030b]/95 p-5 shadow-[0_25px_60px_rgba(2,2,6,0.7)]">
-            <div className="mb-4 flex items-center gap-3">
-              <img src={brandIcon} alt="QSpot" className="h-10 w-10 rounded-xl border border-white/10 bg-white/5 p-1" />
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">Attempt Details</p>
-                <h2 className="text-xl font-semibold text-white">
-                  {selectedAttempt?.user?.name || 'Select an attempt'}
-                </h2>
-              </div>
-            </div>
-
-            {detailsError && (
-              <div className="mb-4 rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
-                {detailsError}
-              </div>
-            )}
-
-            {!selectedAttempt && !detailsLoading && (
-              <div className="flex h-64 flex-col items-center justify-center text-center text-white/60">
-                <FiAlertCircle className="mb-3 text-3xl text-white/40" />
-                Select an attempt from the table to see complete details.
-              </div>
-            )}
-
-            {detailsLoading && (
-              <div className="flex h-64 flex-col items-center justify-center text-white/60">
-                <FiClock className="mb-3 animate-spin text-3xl text-white/50" />
-                Loading details…
-              </div>
-            )}
-
-            {selectedAttempt && !detailsLoading && (
-              <div className="space-y-4 text-sm text-white/85">
-                <div className="grid gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div className="flex flex-wrap gap-2 text-xs uppercase tracking-wide text-white/60">
-                    Attempt ID <span className="text-white/40">#{selectedAttempt.attemptId}</span>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <p className="text-white/60">Participant</p>
-                      <p className="font-semibold">{selectedAttempt.user?.name || 'Unknown'}</p>
-                      {selectedAttempt.user?.email && (
-                        <p className="text-xs text-white/60">{selectedAttempt.user.email}</p>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-white/60">Class</p>
-                      <p className="font-semibold">{selectedAttempt.user?.class || 'NA'}</p>
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <p className="text-white/60">Score</p>
-                      <p className="text-lg font-semibold">{selectedAttempt.score}</p>
-                    </div>
-                    <div>
-                      <p className="text-white/60">Percentage</p>
-                      <p className="text-lg font-semibold">{selectedAttempt.percentage}%</p>
-                    </div>
-                    <div>
-                      <p className="text-white/60">Duration</p>
-                      <p className="text-lg font-semibold">{formatDuration(selectedAttempt.totalDuration)}</p>
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <p className="text-white/60">Language</p>
-                      <p className="font-semibold">{selectedAttempt.language}</p>
-                    </div>
-                    <div>
-                      <p className="text-white/60">Submitted</p>
-                      <p className="font-semibold">{formatDateTime(selectedAttempt.createdAt)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-                    <FiActivity className="text-base text-[#EFB078]" />
-                    Question Breakdown
-                  </div>
-                  <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1 text-xs [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2">
-                    {selectedAttempt.questions?.map((question, index) => {
-                      const answer = selectedAttempt.answers?.[index];
-                      const isCorrect = answer?.isCorrect === 'true';
-                      return (
-                        <div
-                          key={`${question.questionNumber}-${index}`}
-                          className={`rounded-lg border px-3 py-2 ${
-                            isCorrect
-                              ? 'border-emerald-400/40 bg-emerald-400/10'
-                              : 'border-rose-400/40 bg-rose-400/10'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-white/70">
-                            <span>Q{question.questionNumber}</span>
-                            <span>{formatDuration(answer?.duration)}</span>
-                          </div>
-                          <p className="mt-1 text-sm font-semibold text-white">{question.question}</p>
-                          <div className="mt-2 grid gap-2 text-[13px]">
-                            <p>
-                              <span className="text-white/60">Attempted:</span>{' '}
-                              <span className="font-semibold">{answer?.attemptedAnswer || 'NA'}</span>
-                            </p>
-                            <p>
-                              <span className="text-white/60">Correct:</span>{' '}
-                              <span className="font-semibold">{question.correctAnswer}</span>
-                            </p>
-                            <p className={`text-xs font-semibold ${isCorrect ? 'text-emerald-300' : 'text-rose-200'}`}>
-                              {isCorrect ? 'Correct' : 'Incorrect'}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {!selectedAttempt.questions?.length && (
-                      <p className="text-center text-white/60">No question data available.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-        </div>
+        </section>
       </main>
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete Quiz Attempt"
+          description="This will permanently remove the selected quiz attempt. This action cannot be undone."
+          confirmLabel={deleteLoading ? 'Deleting…' : 'Delete'}
+          cancelLabel="Cancel"
+          confirmVariant="danger"
+          onCancel={() => (!deleteLoading ? setDeleteTarget(null) : null)}
+          onConfirm={() => {
+            if (!deleteLoading) {
+              handleDeleteAttempt();
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
